@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "status": "configured",
+  "webMapItemId": "19817e95e24040df8878187622a808bb",
+  "defaultProduct": "NO2",
+  "products": [
+    {
+      "id": "CH4",
+      "label": "CH4",
+      "title": "Saudi Arabia CH4 — Historical Daily (RPRO/OFFL)",
+      "description": "Column-averaged dry-air methane mole fraction.",
+      "variableName": "CH4",
+      "units": "ppb",
+      "imageryItemId": "19584639f99f4fcdbf65295b25137fa8",
+      "imageryUrl": "https://tiledimageservices1.arcgis.com/vFQXQuqACTPxa4Yc/arcgis/rest/services/AQ_saudi_arabia_CH4_HistoricalDaily_Pilot_v1/ImageServer",
+      "managedLayerId": "aq_saudi_arabia_ch4_historical_daily_cube",
+      "firstDate": "2020-04-28",
+      "lastDate": "2024-06-15",
+      "dateCount": 61,
+      "displayMinimum": 1700.0,
+      "displayMaximum": 2050.0,
+      "colors": [
+        "#2c105c",
+        "#2f6c8e",
+        "#43a6a3",
+        "#f4dc75",
+        "#d6532d"
+      ]
+    },
+    {
+      "id": "CO",
+      "label": "CO",
+      "title": "Saudi Arabia CO — Historical Daily (RPRO/OFFL)",
+      "description": "Total carbon-monoxide vertical column.",
+      "variableName": "CO",
+      "units": "10^18 molecules cm-2",
+      "imageryItemId": "4ca00aec622e4e7bb6dd1a0617e0a243",
+      "imageryUrl": "https://tiledimageservices1.arcgis.com/vFQXQuqACTPxa4Yc/arcgis/rest/services/AQ_saudi_arabia_CO_HistoricalDaily_Pilot_v1/ImageServer",
+      "managedLayerId": "aq_saudi_arabia_co_historical_daily_cube",
+      "firstDate": "2019-03-02",
+      "lastDate": "2024-06-15",
+      "dateCount": 61,
+      "displayMinimum": 0.5,
+      "displayMaximum": 3.0,
+      "colors": [
+        "#f4f1e8",
+        "#9dd3c7",
+        "#3a9b9a",
+        "#275d80",
+        "#4b245f"
+      ]
+    },
+    {
+      "id": "HCHO",
+      "label": "HCHO",
+      "title": "Saudi Arabia HCHO — Historical Daily (RPRO/OFFL)",
+      "description": "Tropospheric formaldehyde vertical column, used as an NMVOC proxy.",
+      "variableName": "HCHO",
+      "units": "10^15 molecules cm-2",
+      "imageryItemId": "cec843280c8c4f92b8d7b740eb5a5491",
+      "imageryUrl": "https://tiledimageservices1.arcgis.com/vFQXQuqACTPxa4Yc/arcgis/rest/services/AQ_saudi_arabia_HCHO_HistoricalDaily_Pilot_v1/ImageServer",
+      "managedLayerId": "aq_saudi_arabia_hcho_historical_daily_cube",
+      "firstDate": "2018-09-23",
+      "lastDate": "2024-06-30",
+      "dateCount": 61,
+      "displayMinimum": 0.0,
+      "displayMaximum": 2.5,
+      "colors": [
+        "#f4f1e8",
+        "#fee08b",
+        "#f46d43",
+        "#a50026"
+      ]
+    },
+    {
+      "id": "NO2",
+      "label": "NO2",
+      "title": "Saudi Arabia NO2 — Historical Daily (RPRO/OFFL)",
+      "description": "Tropospheric nitrogen-dioxide vertical column.",
+      "variableName": "NO2",
+      "units": "10^15 molecules cm-2",
+      "imageryItemId": "73dccc8839534d1dbf6eae5702ec70f0",
+      "imageryUrl": "https://tiledimageservices1.arcgis.com/vFQXQuqACTPxa4Yc/arcgis/rest/services/AQ_saudi_arabia_NO2_HistoricalDaily_Pilot_v1/ImageServer",
+      "managedLayerId": "aq_saudi_arabia_no2_historical_daily_cube",
+      "firstDate": "2018-08-08",
+      "lastDate": "2018-10-07",
+      "dateCount": 61,
+      "displayMinimum": 0.0,
+      "displayMaximum": 8.0,
+      "colors": [
+        "#f4f1e8",
+        "#bfdcd5",
+        "#5fb0ae",
+        "#1f4c7a",
+        "#7b1f5c",
+        "#b01048"
+      ]
+    }
+  ],
+  "pilot": true,
+  "updatedUtc": "2026-09-03T17:40:47Z"
+}
