@@ -22,6 +22,10 @@
           <span>Parameter</span>
           <select id="productSelect" aria-label="Atmospheric parameter"></select>
         </label>
+        <label class="product-control">
+          <span>Time product</span>
+          <select id="temporalSelect" aria-label="Temporal product"></select>
+        </label>
         <div class="topbar-meta">
           <span class="pilot-badge">Pilot demonstration</span>
           <span id="coverageLabel" class="coverage-label">Loading…</span>
@@ -44,7 +48,7 @@
           </arcgis-map>
           <div id="mapInstruction" class="map-instruction">
             <span class="pulse-dot" aria-hidden="true"></span>
-            Choose a parameter and date, then click a colored pixel
+            Choose a parameter, time product, and date, then click a colored pixel
           </div>
           <div id="mapBusy" class="map-busy" hidden>Reading the pixel history…</div>
         </section>
@@ -95,7 +99,7 @@
             <div id="chartEmpty" class="chart-empty">
               <div class="empty-icon" aria-hidden="true">↗</div>
               <strong>Your pixel history will appear here</strong>
-              <span>Select CH₄, CO, HCHO, or NO₂, choose a range, and click a colored grid cell.</span>
+              <span>Select a parameter and time product, choose a range, and click a colored grid cell.</span>
             </div>
           </div>
 
@@ -107,7 +111,7 @@
       </main>
 
       <footer>
-        <span>Sentinel-5P / TROPOMI · RPRO preferred, OFFL used afterward · QA screened</span>
+        <span>Sentinel-5P / TROPOMI · Daily, 10-day, and monthly · QA screened</span>
         <span id="footerStatus">Connecting to ArcGIS…</span>
       </footer>
     </div>

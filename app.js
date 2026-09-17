@@ -2,6 +2,7 @@ const elements = {
   map: document.getElementById("mapView"),
   slider: document.getElementById("timeSlider"),
   product: document.getElementById("productSelect"),
+  temporal: document.getElementById("temporalSelect"),
   mapInstruction: document.getElementById("mapInstruction"),
   mapBusy: document.getElementById("mapBusy"),
   coverage: document.getElementById("coverageLabel"),
@@ -63,7 +64,8 @@ function setStatus(title, detail, error = false) {
 }
 function displayFormula(product) {
   const formulas = { CH4: "CH₄", CO: "CO", HCHO: "HCHO", NO2: "NO₂" };
-  return formulas[product.id] ?? product.label;
+  const id = product.productId ?? product.id;
+  return formulas[id] ?? product.label ?? id;
 }
 function valueText(value) {
   return Number.isFinite(value) ? `${Number(value).toFixed(3)} ${activeProduct.units}` : "No data";
@@ -238,14 +240,15 @@ function setQuickRange(days, query = true) {
 function downloadCsv() {
   if (!selectedPoint || !completeSeries.length) return;
   const rows = filteredSeries();
-  const header = ["date", `${activeProduct.id.toLowerCase()}_value`, "units", "pixel_valid", "longitude", "latitude"];
+  const productId = activeProduct.productId ?? activeProduct.id;
+  const header = ["date", `${productId.toLowerCase()}_${activeProduct.resolutionId}_value`, "units", "pixel_valid", "longitude", "latitude"];
   const body = rows.map((row) => [dateKey(row.date), Number.isFinite(row.value) ? row.value : "", activeProduct.units,
     Number.isFinite(row.value) ? 1 : 0, selectedPoint.longitude.toFixed(6), selectedPoint.latitude.toFixed(6)]);
   const csv = [header, ...body].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `saudi_${activeProduct.id.toLowerCase()}_pixel_${selectedPoint.longitude.toFixed(4)}_${selectedPoint.latitude.toFixed(4)}.csv`;
+  link.download = `saudi_${productId.toLowerCase()}_${activeProduct.resolutionId}_pixel_${selectedPoint.longitude.toFixed(4)}_${selectedPoint.latitude.toFixed(4)}.csv`;
   link.click(); URL.revokeObjectURL(link.href);
 }
 
@@ -363,13 +366,14 @@ async function showPoint(point) {
 }
 
 async function layerFor(product) {
-  if (productLayers.has(product.id)) return productLayers.get(product.id);
+  const key = product.key ?? product.id;
+  if (productLayers.has(key)) return productLayers.get(key);
   if (!product.imageryItemId && !product.imageryUrl) {
-    throw new Error(`${product.id} has not been published yet.`);
+    throw new Error(`${key} has not been published yet.`);
   }
   const ImageryTileLayer = await $arcgis.import("@arcgis/core/layers/ImageryTileLayer.js");
   const properties = {
-    id: `aq-pixel-explorer-${product.id.toLowerCase()}`,
+    id: `aq-pixel-explorer-${key.toLowerCase().replaceAll(":", "-")}`,
     title: product.title,
     visible: false,
     opacity: 0.88,
@@ -380,7 +384,7 @@ async function layerFor(product) {
   const layer = new ImageryTileLayer(properties);
   elements.map.map.add(layer);
   await layer.load();
-  productLayers.set(product.id, layer);
+  productLayers.set(key, layer);
   return layer;
 }
 function resetSeries() {
@@ -391,8 +395,26 @@ function resetSeries() {
   elements.average.textContent = "—"; elements.valid.textContent = "—";
   elements.selectedValue.textContent = "—"; elements.rangeCount.textContent = "No pixel selected";
 }
-async function activateProduct(productId, queryPoint = true) {
-  const product = config.products.find((row) => row.id === productId);
+function availableResolutions(productId) {
+  const available = new Set(
+    config.datasets.filter((row) => row.productId === productId).map((row) => row.resolutionId)
+  );
+  return config.resolutions.filter((row) => available.has(row.id));
+}
+function populateResolutions(productId, preferred) {
+  const rows = availableResolutions(productId);
+  elements.temporal.innerHTML = "";
+  for (const row of rows) {
+    const option = document.createElement("option");
+    option.value = row.id; option.textContent = row.label;
+    elements.temporal.append(option);
+  }
+  elements.temporal.value = rows.some((row) => row.id === preferred) ? preferred : rows[0]?.id ?? "";
+}
+async function activateProduct(productId, resolutionId, queryPoint = true) {
+  const product = config.datasets.find(
+    (row) => row.productId === productId && row.resolutionId === resolutionId
+  );
   if (!product) return;
   queryGeneration += 1;
   elements.mapBusy.hidden = true;
@@ -404,7 +426,7 @@ async function activateProduct(productId, queryPoint = true) {
   const variables = layer.serviceRasterInfo?.multidimensionalInfo?.variables ?? [];
   const variable = variables.find((row) => row.name === product.variableName) ?? variables[0];
   const dimension = variable?.dimensions?.find((row) => row.name === "StdTime") ?? variable?.dimensions?.[0];
-  if (!variable || !dimension?.values?.length) throw new Error(`${product.id} contains no readable time dimension.`);
+  if (!variable || !dimension?.values?.length) throw new Error(`${product.key} contains no readable time dimension.`);
   activeVariableName = variable.name;
   dimensionName = dimension.name;
   dimensionDates = dimension.values.map(safeDate).filter(Boolean).sort((a, b) => a - b);
@@ -414,17 +436,17 @@ async function activateProduct(productId, queryPoint = true) {
   elements.slider.timeExtent = { start: selectedMapDate, end: selectedMapDate };
   setLayerDate(selectedMapDate);
   initializeRange();
-  elements.coverage.textContent = `${product.id} · ${dimensionDates.length.toLocaleString()} slices · ${dateKey(dimensionDates[0])} to ${dateKey(dimensionDates.at(-1))}`;
-  elements.productEyebrow.textContent = `${displayFormula(product)} selected location`;
-  elements.valueLabel.textContent = `${displayFormula(product)} value`;
-  elements.scienceTitle.textContent = `${displayFormula(product)} · ${product.units}`;
-  elements.scienceText.textContent = `${product.description} This is a satellite column product, not a surface concentration or AQI. Gaps are unavailable or quality-rejected observations.`;
+  elements.coverage.textContent = `${product.productId} · ${product.resolutionLabel} · ${dimensionDates.length.toLocaleString()} slices · ${dateKey(dimensionDates[0])} to ${dateKey(dimensionDates.at(-1))}`;
+  elements.productEyebrow.textContent = `${displayFormula(product)} · ${product.resolutionLabel} selected location`;
+  elements.valueLabel.textContent = `${displayFormula(product)} ${product.resolutionLabel} value`;
+  elements.scienceTitle.textContent = `${displayFormula(product)} · ${product.resolutionLabel} · ${product.units}`;
+  elements.scienceText.textContent = `${product.description} The selected time product is ${product.resolutionLabel.toLowerCase()}. This is a satellite column product, not a surface concentration or AQI. Gaps are unavailable or quality-rejected observations.`;
   resetSeries();
   const modeText = layer.serviceRasterInfo?.hasMultidimensionalTranspose
     ? "Optimized time-series access is available."
     : "Compatible range-based pixel queries are enabled.";
   setStatus(`${displayFormula(product)} connected`, `${modeText} Choose a range and click a colored pixel.`);
-  elements.footer.textContent = `${displayFormula(product)} connected · click the map to build its pixel chart`;
+  elements.footer.textContent = `${displayFormula(product)} ${product.resolutionLabel} connected · click the map to build its pixel chart`;
   if (queryPoint && selectedPoint) await showPoint(selectedPoint);
 }
 
@@ -434,7 +456,9 @@ async function initialize() {
       if (!response.ok) throw new Error("config.json could not be loaded"); return response.json();
     });
     if (!config.webMapItemId) throw new Error("The Web Map item ID is not configured.");
-    if (!Array.isArray(config.products) || !config.products.length) throw new Error("No product cube is configured.");
+    if (!Array.isArray(config.products) || !config.products.length) throw new Error("No atmospheric parameter is configured.");
+    if (!Array.isArray(config.datasets) || !config.datasets.length) throw new Error("No temporal dataset is configured.");
+    if (!Array.isArray(config.resolutions) || !config.resolutions.length) throw new Error("No temporal resolution is configured.");
     for (const product of config.products) {
       const option = document.createElement("option"); option.value = product.id;
       option.textContent = `${displayFormula(product)} — ${product.description}`;
@@ -442,6 +466,7 @@ async function initialize() {
     }
     elements.product.value = config.products.some((row) => row.id === config.defaultProduct)
       ? config.defaultProduct : config.products[0].id;
+    populateResolutions(elements.product.value, config.defaultResolution);
     elements.map.setAttribute("item-id", config.webMapItemId);
     await elements.map.viewOnReady(); await elements.map.map.loadAll();
     elements.map.map.allLayers.forEach((layer) => {
@@ -454,15 +479,22 @@ async function initialize() {
         layer.listMode = "hide";
       }
     });
-    await activateProduct(elements.product.value, false);
+    await activateProduct(elements.product.value, elements.temporal.value, false);
     if (imageryLayer.fullExtent) await elements.map.view.goTo(imageryLayer.fullExtent.expand(1.06), { duration: 700 }).catch(() => {});
     elements.map.addEventListener("arcgisViewClick", (event) => showPoint(event.detail.mapPoint));
     elements.slider.addEventListener("arcgisPropertyChange", (event) => {
       if (event.detail?.name === "timeExtent") setLayerDate(selectedSliderDate());
     });
     elements.product.addEventListener("change", async () => {
-      try { await activateProduct(elements.product.value); }
+      try {
+        populateResolutions(elements.product.value, elements.temporal.value || config.defaultResolution);
+        await activateProduct(elements.product.value, elements.temporal.value);
+      }
       catch (error) { console.error(error); setStatus("Parameter unavailable", error.message || String(error), true); }
+    });
+    elements.temporal.addEventListener("change", async () => {
+      try { await activateProduct(elements.product.value, elements.temporal.value); }
+      catch (error) { console.error(error); setStatus("Time product unavailable", error.message || String(error), true); }
     });
   } catch (error) {
     console.error(error); setStatus("Explorer is not ready", error.message || String(error), true);

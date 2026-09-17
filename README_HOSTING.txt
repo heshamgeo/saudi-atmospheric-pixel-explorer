@@ -1,16 +1,19 @@
-SAUDI ARABIA FOUR-PRODUCT PIXEL EXPLORER
-========================================
+SAUDI ARABIA MULTIRESOLUTION PIXEL EXPLORER
+============================================
 
 This folder is a static ArcGIS Maps SDK for JavaScript application. After the
-four multidimensional imagery services are published, config.json contains the
-stable Web Map and imagery-service identifiers.
+daily, 10-day, and monthly multidimensional imagery services are published,
+config.json contains their stable Web Map and imagery-service identifiers.
 
-The explorer does not require a multidimensional transpose. For the current
-tiled services it queries the selected date range with parallel one-slice
-identify requests. If ArcGIS later reports that a transpose is available, the
-same app automatically uses the faster one-request method. The 90-day range is
-the default for responsive public demonstrations; 1-year, full-record, and
-custom ranges remain available.
+The application provides separate Parameter and Time product selectors. Daily
+loads the existing services. 10-Day and Monthly load the new aggregate cubes.
+Each selection updates the map, date slider, clickable pixel chart, and CSV.
+
+The explorer does not require a multidimensional transpose. It queries the
+selected date range with parallel one-slice identify requests when a transpose
+is absent. If ArcGIS reports a transpose, the same app automatically uses the
+faster one-request method. The default chart range remains 90 days; 1-year,
+full-record, and custom ranges remain available.
 
 Each imagery item is loaded directly from its stable ArcGIS item ID. This is
 intentional: the explorer remains usable even if a programmatically inserted
@@ -26,5 +29,6 @@ selector, map date slider, one-click pixel chart, range selector, and CSV
 download. Experience Builder continues to provide the surrounding pages,
 navigation, text, and branding.
 
-Publish/share the Experience, Web Map, four imagery services, and hosted static
-application consistently. The publisher never changes sharing automatically.
+Publish/share the Experience, Web Map, twelve imagery services, and hosted
+static application consistently. The publisher never changes sharing
+automatically.
