@@ -516,4 +516,30 @@ elements.end.addEventListener("change", () => {
 });
 document.querySelectorAll("[data-range]").forEach((button) => button.addEventListener("click", () => setQuickRange(button.dataset.range)));
 elements.download.addEventListener("click", downloadCsv);
-initialize();
+window.saudiAtmosphereExplorer = {
+  async matchPlume(record, queryAtCenter = false) {
+    if (!record) return null;
+    const product = ["CH4", "CO", "NO2"].includes(record.gas) ? record.gas : null;
+    if (product && elements.product.value !== product) {
+      elements.product.value = product;
+      populateResolutions(product, elements.temporal.value || config.defaultResolution);
+      await activateProduct(product, elements.temporal.value, false);
+    }
+    const requestedDate = safeDate(`${record.date}T12:00:00Z`);
+    if (requestedDate && dimensionDates.length) {
+      setLayerDate(requestedDate);
+      const windowStart = new Date(selectedMapDate.getTime() - 90 * DATE_DAY_MS);
+      const windowEnd = new Date(selectedMapDate.getTime() + 90 * DATE_DAY_MS);
+      elements.start.value = dateKey(windowStart < dimensionDates[0] ? dimensionDates[0] : windowStart);
+      elements.end.value = dateKey(windowEnd > dimensionDates.at(-1) ? dimensionDates.at(-1) : windowEnd);
+      document.querySelectorAll("[data-range]").forEach(button => button.classList.remove("active"));
+    }
+    if (queryAtCenter) {
+      const Point = await $arcgis.import("@arcgis/core/geometry/Point.js");
+      await showPoint(new Point({ longitude: record.longitude, latitude: record.latitude }));
+    }
+    return { productId: activeProduct?.productId, resolutionId: activeProduct?.resolutionId,
+      selectedDate: selectedMapDate ? dateKey(selectedMapDate) : null };
+  },
+};
+window.saudiAtmosphereExplorerReady = initialize();

@@ -9,6 +9,7 @@
     <script type="module" src="https://js.arcgis.com/5.1/"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="integration.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -16,7 +17,7 @@
         <div class="brand-mark" aria-hidden="true">S5P</div>
         <div class="brand-copy">
           <p class="eyebrow">Saudi Arabia satellite atmosphere monitor</p>
-          <h1>Historical Pixel Explorer</h1>
+          <h1>Atmospheric Explorer</h1>
         </div>
         <label class="product-control">
           <span>Parameter</span>
@@ -51,6 +52,23 @@
             Choose a parameter, time product, and date, then click a colored pixel
           </div>
           <div id="mapBusy" class="map-busy" hidden>Reading the pixel history…</div>
+          <button id="plumeCompareToggle" class="plume-compare-toggle" type="button" aria-expanded="false">
+            <span>Plume comparison</span><small id="plumeCount">Loading candidates…</small>
+          </button>
+          <section id="plumeComparePanel" class="plume-compare-panel" hidden aria-label="Plume comparison controls">
+            <div class="plume-panel-heading">
+              <div><span>EMIT trace gases</span><strong>Compare plume candidates</strong></div>
+              <button id="plumePanelClose" type="button" aria-label="Close plume controls">×</button>
+            </div>
+            <label class="plume-field"><span>Gas</span><select id="plumeGasFilter"><option value="ALL">All four gases</option><option value="CH4">CH₄ · Methane</option><option value="NH3">NH₃ · Ammonia</option><option value="NO2">NO₂ · Nitrogen dioxide</option><option value="CO">CO · Carbon monoxide</option></select></label>
+            <label class="plume-field"><span>Candidate</span><select id="plumeEventSelect"><option>Loading…</option></select></label>
+            <label class="plume-check"><input id="plumeShowMarkers" type="checkbox" checked> Show all filtered candidates</label>
+            <label class="plume-check"><input id="plumeMatchS5P" type="checkbox" checked> Match Sentinel-5P to the plume date</label>
+            <label class="plume-field"><span>Plume opacity <output id="plumeOpacityValue">82%</output></span><input id="plumeOpacity" type="range" min="35" max="100" value="82"></label>
+            <div id="plumeDetails" class="plume-details">Choose a candidate to overlay its footprint on Sentinel-5P.</div>
+            <button id="plumeClear" class="plume-clear" type="button">Clear selected plume</button>
+          </section>
+          <div id="plumeCompareLegend" class="plume-compare-legend" hidden></div>
         </section>
 
         <aside class="insight-panel" aria-label="Pixel time series">
@@ -111,10 +129,11 @@
       </main>
 
       <footer>
-        <span>Sentinel-5P / TROPOMI · Daily, 10-day, and monthly · QA screened</span>
+        <span>Sentinel-5P time series · EMIT trace gases plume candidates</span>
         <span id="footerStatus">Connecting to ArcGIS…</span>
       </footer>
     </div>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=emit-1.0.1"></script>
+    <script type="module" src="integration.js?v=emit-1.0.1"></script>
   </body>
 </html>
