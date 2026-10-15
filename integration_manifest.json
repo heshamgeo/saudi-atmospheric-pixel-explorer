@@ -11,8 +11,8 @@
   "other_gas_rates_pending": 85,
   "first_date": "2022-08-22",
   "last_date": "2026-07-22",
-  "version": "1.0.1",
-  "built_at": "2026-10-14T15:47:06Z",
+  "version": "1.1.1",
+  "built_at": "2026-10-15T15:26:40Z",
   "manifest_sha256": "d96f1f142c840f081316a6165b40dee212b151d96e59fbf60c368bba859fa801",
   "rate_results_sha256": "70a9ca9231bcb7f5e7be488d4d9b901476da9151fa00dc8600fdcb49038f64d7",
   "protected_s5p_files": {
@@ -21,6 +21,8 @@
   },
   "source_tiffs_modified": false,
   "new_emission_calculations": 0,
-  "display_basis": "saved binary footprint TIFFs; gas color; mask-level methane rates in details",
+  "display_basis": "lightly smoothed signal PNGs within saved footprints; numeric color scales; saved methane rates in details",
+  "display_smoothing_sigma_native_pixels": 0.6,
+  "plume_above_context_layers": true,
   "officially_confirmed_rates": 0
 }

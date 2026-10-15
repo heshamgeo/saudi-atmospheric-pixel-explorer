@@ -1,3 +1,4 @@
+
 // Saudi EMIT candidate replacement; keeps the existing 1.2.2 comparison controls.
 const PLUME_ROOT = new URL("plumes/", window.location.href);
 const CATALOG_URL = new URL("data/plume_catalog.json", PLUME_ROOT);
@@ -17,6 +18,7 @@ const state = {
   Graphic: null, GraphicsLayer: null, MediaLayer: null, ImageElement: null,
   Extent: null, ExtentAndRotationGeoreference: null,
   markerLayer: null, selectionLayer: null, overlayLayer: null,
+  layerOrderScheduled: false, layerOrderHandle: null,
 };
 function escapeHtml(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;")
@@ -82,18 +84,42 @@ function renderDetails(record, matchResult = null) {
 function renderLegend() {
   if (!state.selected) { ui.legend.hidden = true; return; }
   const record = state.selected;
-  const color = `rgb(${COLORS[record.gas].join(",")})`;
+  const asset = record.assets.plume;
+  const valueText = value => Number(value).toLocaleString(undefined, { maximumSignificantDigits: 4 });
+  const title = asset.physical_units ? `${LABELS[record.gas]} enhancement` : `${LABELS[record.gas]} detection response`;
+  const ramp = `linear-gradient(90deg, ${asset.color_stops.join(", ")})`;
   ui.legend.hidden = false;
-  ui.legend.innerHTML = `<strong>${escapeHtml(LABELS[record.gas])} candidate footprint</strong>
-    <div class="plume-source-ramp" style="background:${color}"></div>
-    <div class="plume-legend-values"><span>Candidate</span><span>Transparent: outside mask</span></div>
-    <small>Footprint extent · colors identify the gas, not concentration or kg/h.</small>`;
+  ui.legend.innerHTML = `<strong>${escapeHtml(title)} (${escapeHtml(asset.unit_label)})</strong>
+    <div class="plume-source-ramp" style="background:${escapeHtml(ramp)}"></div>
+    <div class="plume-legend-values"><span>≤ ${escapeHtml(valueText(asset.display_min))}</span><span>≥ ${escapeHtml(valueText(asset.display_max))}</span></div>
+    <small>Lightly smoothed display. Range adjusted per candidate; transparent outside the valid mask.</small>
+    <small>${asset.physical_units ? "Colors show methane enhancement, not kg/h." : "Colors show detector response; concentration and emission rate are unavailable."}</small>`;
 }
 function removeOverlay() {
   if (!state.overlayLayer) return;
   ui.map.map.remove(state.overlayLayer);
   state.overlayLayer.destroy();
   state.overlayLayer = null;
+}
+function keepPlumeOnTop() {
+  const layers = ui.map.map?.layers;
+  if (!layers) return;
+  // All map context stays below the plume; only its selection marker is above it.
+  const managed = [state.markerLayer, state.overlayLayer, state.selectionLayer]
+    .filter(layer => layer && layers.includes(layer));
+  const start = layers.length - managed.length;
+  // Reverse order keeps the suffix correct even when context layers are interleaved.
+  for (let i = managed.length - 1; i >= 0; i--) {
+    if (layers.indexOf(managed[i]) !== start + i) ui.map.map.reorder(managed[i], start + i);
+  }
+}
+function schedulePlumeOrder() {
+  if (state.layerOrderScheduled) return;
+  state.layerOrderScheduled = true;
+  Promise.resolve().then(() => {
+    state.layerOrderScheduled = false;
+    keepPlumeOnTop();
+  });
 }
 function updateOverlay() {
   if (!state.selected || !state.MediaLayer) return;
@@ -103,12 +129,11 @@ function updateOverlay() {
   const extent = new state.Extent({ xmin: b[0], ymin: b[1], xmax: b[2], ymax: b[3], spatialReference: { wkid: 4326 } });
   const image = new state.ImageElement({ image: new URL(asset.url, PLUME_ROOT).href,
     georeference: new state.ExtentAndRotationGeoreference({ extent }) });
-  state.overlayLayer = new state.MediaLayer({ id: "saudi-emit-selected-footprint",
+  state.overlayLayer = new state.MediaLayer({ id: "saudi-emit-selected-signal",
     title: `${LABELS[state.selected.gas]} candidate · ${state.selected.date}`,
     source: [image], opacity: Number(ui.opacity.value) / 100, listMode: "show" });
   ui.map.map.add(state.overlayLayer);
-  ui.map.map.reorder(state.markerLayer, ui.map.map.layers.length - 1);
-  ui.map.map.reorder(state.selectionLayer, ui.map.map.layers.length - 1);
+  keepPlumeOnTop();
   renderLegend();
 }
 async function selectRecord(plumeId, navigate = true) {
@@ -136,7 +161,10 @@ async function selectRecord(plumeId, navigate = true) {
     });
     try {
       const matched = await state.matchChain;
-      if (version === state.selectionVersion) renderDetails(record, matched);
+      if (version === state.selectionVersion) {
+        keepPlumeOnTop();
+        renderDetails(record, matched);
+      }
     } catch (error) {
       console.error(error);
       if (version === state.selectionVersion) renderDetails(record);
@@ -147,7 +175,7 @@ function clearSelection() {
   ++state.selectionVersion;
   state.selected = null; ui.event.value = "";
   state.selectionLayer?.removeAll(); removeOverlay(); ui.legend.hidden = true;
-  ui.details.textContent = "Choose a candidate to overlay its footprint on Sentinel-5P.";
+  ui.details.textContent = "Choose a candidate to overlay its signal intensity on Sentinel-5P.";
 }
 function bindControls() {
   ui.toggle.addEventListener("click", () => openPanel(ui.panel.hidden));
@@ -180,6 +208,7 @@ async function initializeComparison() {
     Object.assign(state, { Graphic, GraphicsLayer, MediaLayer, ImageElement, Extent, ExtentAndRotationGeoreference });
     state.markerLayer = new GraphicsLayer({ id: "saudi-emit-candidate-markers", title: "EMIT trace-gas candidates", visible: true });
     state.selectionLayer = new GraphicsLayer({ id: "saudi-emit-candidate-selection", title: "Selected EMIT candidate", listMode: "hide" });
+    state.layerOrderHandle = ui.map.map.layers.on("change", schedulePlumeOrder);
     ui.map.map.addMany([state.markerLayer, state.selectionLayer]); populateEvents();
     ui.map.addEventListener("arcgisViewClick", async event => {
       if (!state.markerLayer.visible) return;
